@@ -6,6 +6,8 @@ Buzz WebMCP is a small, public WebMCP extension built for the 2026 OpenAI WebMCP
 
 > The public demo is deliberately isolated. Every visitor receives a separate sample workspace. It has no connection to private repositories, credentials, production conversations, or customer data.
 
+![Buzz WebMCP live workspace](docs/live-demo.png)
+
 ## Why WebMCP
 
 Traditional MCP connects an AI application to a separate local or remote server. WebMCP lets the website itself expose carefully designed capabilities to an agent visiting the page. That distinction matters in a collaborative workspace: the person and agent can see the same rooms and the same results without installing a separate integration or copying context between systems.
