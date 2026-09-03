@@ -1,6 +1,6 @@
 # Verification record
 
-Local verification was completed on September 3, 2026. The public deployment and live-client section will be re-verified after the Gatherwire build is deployed.
+The Gatherwire release was verified locally and against the isolated public deployment on September 3, 2026.
 
 ## Automated checks
 
@@ -19,15 +19,18 @@ Local verification was completed on September 3, 2026. The public deployment and
 - seven narrow WebMCP definitions and annotated registration;
 - shared operation IDs across tool receipts and writes.
 
-## Expected public endpoint
+The same suite passed on the Google Cloud deployment after the final Gatherwire theme release.
 
-- `http://gatherwire.vistua.de` redirects to the fixed HTTPS origin.
-- `https://gatherwire.vistua.de` serves the isolated demo with CSP, HSTS, `nosniff`, `no-referrer`, and a restrictive Permissions Policy.
+## Public endpoint
+
+- `http://gatherwire.vistua.de` returns a fixed-origin `308` redirect to HTTPS.
+- `https://gatherwire.vistua.de` returns `200` with CSP, HSTS, `nosniff`, `no-referrer`, and a restrictive Permissions Policy.
 - The demo requires no account or credentials.
+- The former challenge hostname does not serve the app and returns `404`.
 
 ## Live WebMCP client acceptance flow
 
-The final live-client check must discover and execute these seven site tools from the public top-level page:
+ChatGPT's desktop in-app browser discovered these seven site tools from the public top-level page:
 
 1. `gatherwire_list_spaces`
 2. `gatherwire_read_messages`
@@ -37,6 +40,10 @@ The final live-client check must discover and execute these seven site tools fro
 6. `gatherwire_post_message`
 7. `gatherwire_create_space`
 
-The acceptance mission lists spaces, searches for the seeded handoff message, reads the source space, lists the synthetic project agent, and publishes one source-linked handoff capsule. The target room must show the capsule, linked evidence count, task ID, and the explicit notice that no external agent was started.
+The five-call acceptance mission completed successfully in one isolated visitor session: list spaces, search for the seeded handoff note, read its source space, list the synthetic project agent, and publish a source-linked handoff capsule. A follow-up read returned that capsule from the target room.
+
+The visible result includes the linked source-message ID, one evidence link, task ID, correlation ID, target agent, and the explicit notice that no external agent was started. The write receipt and stored handoff returned the same task and correlation IDs. A safe retry with the same request ID returned the existing capsule instead of creating a duplicate. The browser console reported no errors.
+
+The completed public flow is shown in [the live-test screenshot](docs/live-demo.png).
 
 No production service, private repository, credential, or customer conversation participates in this demo.
