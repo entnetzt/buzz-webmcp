@@ -89,6 +89,8 @@ Run the verification suite:
 npm run check
 ```
 
+The dated [public verification record](VERIFICATION.md) also documents the live HTTPS and ChatGPT WebMCP-client checks.
+
 Optional environment variables:
 
 | Variable | Default | Purpose |
