@@ -461,6 +461,7 @@ body,
 .brand-mark i:nth-child(3) { background: var(--orange); }
 .search-box { border: 1px solid var(--line); border-radius: 0; background: var(--panel); box-shadow: 2px 3px 0 rgba(120, 109, 84, 0.14); }
 .search-box:focus-within { border-color: var(--lime); box-shadow: 3px 4px 0 rgba(49, 86, 201, 0.16); }
+.search-box input::placeholder { color: var(--muted); }
 .search-box kbd { border-radius: 0; background: #eeeadd; }
 .tool-status { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .tool-status.available { color: var(--lime); }
@@ -500,6 +501,7 @@ body,
 .message + .message { border-top: 1px dashed rgba(49, 86, 201, 0.35); }
 .message .avatar { border: 1px solid var(--line); border-radius: 0; background: var(--panel); box-shadow: 2px 2px 0 rgba(120, 109, 84, 0.13); }
 .message.agent .avatar { color: #ffffff; background: var(--lime); }
+.message-meta time { color: var(--muted); }
 .source-badge { color: #ffffff; border-color: var(--lime); border-radius: 0; background: var(--lime); }
 .message p { color: #302f32; }
 .message.evidence-focus { border-radius: 0; background: var(--panel); outline: 2px solid var(--lime); box-shadow: 4px 4px 0 rgba(49, 86, 201, 0.16); }
@@ -518,6 +520,7 @@ body,
 
 .composer { border: 1px solid var(--line); border-radius: 0; background: var(--panel); box-shadow: 4px 5px 0 rgba(120, 109, 84, 0.17); }
 .composer:focus-within { border-color: var(--lime); box-shadow: 4px 5px 0 rgba(49, 86, 201, 0.16); }
+.composer textarea::placeholder { color: var(--muted); }
 .composer-foot button, .dialog-actions button { color: #ffffff; border: 1px solid var(--lime); border-radius: 0; background: var(--lime); box-shadow: 3px 3px 0 #1c2d79; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
 .composer-foot button:hover, .dialog-actions button:hover { border-color: var(--lime); background: var(--lime); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--line); }
 .search-results { border-bottom: 1px dashed var(--lime); background: rgba(251, 250, 244, 0.95); }
@@ -538,11 +541,13 @@ body,
 .activity li { border-top: 1px dashed rgba(49, 86, 201, 0.35); }
 .receipt-line .read { color: var(--lime); }
 .receipt-line .write, .receipt.failure .receipt-line code { color: var(--orange); }
+.receipt-detail, .receipt-empty { color: var(--muted) !important; }
 
 dialog { border: 1px solid var(--line); border-radius: 0; background: var(--panel); box-shadow: 7px 8px 0 rgba(120, 109, 84, 0.28); }
 dialog input, dialog textarea { border: 1px solid var(--line); border-radius: 0; background: var(--panel); box-shadow: 2px 3px 0 rgba(120, 109, 84, 0.13); }
 dialog input:focus, dialog textarea:focus { border-color: var(--lime); box-shadow: 3px 4px 0 rgba(49, 86, 201, 0.16); }
 .dialog-actions .secondary { color: var(--ink); border: 1px solid var(--line); border-radius: 0; background: var(--panel); box-shadow: none; }
+.dialog-actions .secondary:hover { color: #ffffff; border-color: var(--lime); background: var(--lime); }
 .toast { color: #ffffff; border: 1px solid var(--lime); border-radius: 0; background: var(--lime); box-shadow: 4px 4px 0 #1c2d79; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline-color: var(--lime); outline-offset: 3px; }
 
