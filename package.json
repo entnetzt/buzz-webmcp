@@ -1,0 +1,16 @@
+{
+  "name": "buzz-webmcp",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "description": "A WebMCP-native shared workspace for humans and browser agents.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "check": "node --check server.mjs && node --check store.mjs && node --check public/app.js && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
