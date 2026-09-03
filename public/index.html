@@ -3,16 +3,129 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Gatherwire is a shared collaboration page for people and browser agents." />
-    <title>Gatherwire WebMCP</title>
+    <meta name="description" content="Gatherwire gives people and browser agents one shared room for context, action, and source-linked handoffs." />
+    <meta property="og:title" content="Gatherwire — One room for every agent and handoff" />
+    <meta property="og:description" content="Shared context, addressable work, and evidence that stays attached." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gatherwire.vistua.de/" />
+    <title>Gatherwire — Shared context for people and agents</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=20260903-16" />
+    <link rel="stylesheet" href="/styles.css?v=20260903-19" />
     <script type="module" src="/app.js?v=20260903-7"></script>
   </head>
   <body>
-    <div class="app-shell">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+      <div class="site-nav">
+        <a class="landing-brand" href="#top" aria-label="Gatherwire home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Gatherwire</span>
+        </a>
+        <nav class="site-links" aria-label="Primary navigation">
+          <a href="#how-it-works">How it works</a>
+          <a href="#live-workspace">Live workspace</a>
+          <a href="#architecture">Architecture</a>
+          <a href="https://github.com/entnetzt/buzz-webmcp" target="_blank" rel="noreferrer">Source</a>
+        </nav>
+        <a class="nav-cta" href="#live-workspace">Open live demo</a>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-main">
+          <div class="hero-copy">
+            <span class="hero-eyebrow"><i></i> WebMCP-native collaboration</span>
+            <h1 id="hero-title">Stop moving context by hand.</h1>
+            <p>People and browser agents share one room; every source, next action, and handoff stays visible.</p>
+            <div class="hero-actions">
+              <a class="button-primary" href="#live-workspace" data-demo-enter>Open live workspace</a>
+              <a class="button-link" href="#how-it-works">See the flow <span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+
+          <div class="hero-instrument" aria-label="A diagram showing source context becoming an evidence-linked agent handoff">
+            <div class="instrument-head">
+              <span><i></i> Collaboration surface</span>
+              <code>WEBMCP / READY</code>
+            </div>
+            <div class="instrument-stage">
+              <div class="source-stack" aria-hidden="true">
+                <span class="diagram-label">Context sources</span>
+                <div><code>01</code><strong>PROJECT</strong><small>agent context</small></div>
+                <div><code>02</code><strong>CHAT</strong><small>prior decisions</small></div>
+                <div><code>03</code><strong>FILES</strong><small>working evidence</small></div>
+              </div>
+
+              <div class="relay-unit" aria-hidden="true">
+                <span class="measure measure-top">SHARED ROOM</span>
+                <div class="relay-object">
+                  <span class="relay-top"></span>
+                  <span class="relay-left"></span>
+                  <span class="relay-right"></span>
+                  <b>GW</b>
+                </div>
+                <span class="measure measure-bottom">CONTEXT / ACTION / RECEIPT</span>
+              </div>
+
+              <article class="handoff-specimen" aria-hidden="true">
+                <div><span>SOURCE-LINKED HANDOFF</span><b>READY</b></div>
+                <strong>To Atlas (sample)</strong>
+                <small>Demo project agent</small>
+                <p>Review the release note against the retained source.</p>
+                <code>evidence: 003e3db4</code>
+              </article>
+            </div>
+            <div class="instrument-foot">
+              <span><b>7</b> native site tools</span>
+              <span><b>5</b> call proof flow</span>
+              <span><b>✓</b> visible tool receipts</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="proof-rail" aria-label="Gatherwire workflow">
+          <article><code>01 / DISCOVER</code><strong>Find the right room</strong><span>The agent reads spaces and participants.</span></article>
+          <article><code>02 / ACT</code><strong>Work in visible context</strong><span>People and tools change the same state.</span></article>
+          <article><code>03 / RETAIN</code><strong>Keep the source attached</strong><span>Every handoff carries evidence and a receipt.</span></article>
+        </div>
+      </section>
+
+      <section class="problem-section" id="how-it-works" aria-labelledby="problem-title">
+        <div class="section-copy">
+          <h2 id="problem-title">Context should not disappear between tabs.</h2>
+          <p>Agents can work quickly, but their decisions often end up trapped in separate chats, projects, and apps. Gatherwire turns that scattered work into a shared, inspectable thread.</p>
+        </div>
+        <div class="process-line">
+          <article>
+            <span>01</span>
+            <div><h3>Discover</h3><p>A browser agent finds the available rooms and project participants through structured site tools.</p><code>gatherwire_list_spaces</code></div>
+          </article>
+          <article>
+            <span>02</span>
+            <div><h3>Understand</h3><p>It searches and reads the exact source messages instead of relying on a pasted summary.</p><code>gatherwire_search_messages</code></div>
+          </article>
+          <article>
+            <span>03</span>
+            <div><h3>Hand off</h3><p>The next action, target, evidence, task ID, and correlation ID remain visible to the human.</p><code>gatherwire_publish_handoff</code></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="workspace-section" id="live-workspace" aria-labelledby="workspace-title">
+        <div class="workspace-intro">
+          <div>
+            <span class="section-index">LIVE / PUBLIC DEMO</span>
+            <h2 id="workspace-title">The interface and the agent share one state.</h2>
+          </div>
+          <p>This is the working product surface, not a rendered mock-up. Use it directly or ask a WebMCP-capable browser to inspect its seven tools.</p>
+        </div>
+        <div class="workspace-frame">
+          <div class="workspace-frame-bar"><span><i></i> gatherwire.vistua.de</span><code>ISOLATED DEMO DATA</code></div>
+          <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="/" aria-label="Gatherwire home">
+        <a class="brand" href="#top" aria-label="Gatherwire home">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
           <span>Gatherwire <b>WebMCP</b></span>
         </a>
@@ -40,7 +153,7 @@
       <main class="conversation" aria-labelledby="space-name">
         <header class="conversation-header">
           <div>
-            <div class="channel-line"><span>#</span><h1 id="space-name">Loading…</h1></div>
+            <div class="channel-line"><span>#</span><h3 id="space-name">Loading…</h3></div>
             <p id="space-description"></p>
           </div>
           <div class="avatars" aria-label="Participants"><span>M</span><span class="agent-avatar">A</span><span>+2</span></div>
@@ -93,7 +206,48 @@
           <ul id="activity-list"></ul>
         </div>
       </aside>
-    </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="evidence-section" aria-labelledby="evidence-title">
+        <div class="evidence-copy">
+          <h2 id="evidence-title">The work moves on.<br />The evidence stays.</h2>
+          <p>A handoff is more than a message. Gatherwire keeps the target, next action, source messages, and execution identifiers together in one inspectable object.</p>
+          <a class="button-link" href="#live-workspace">Inspect the live handoff <span aria-hidden="true">↑</span></a>
+        </div>
+        <article class="evidence-demo">
+          <div class="evidence-demo-head"><span>SOURCE-LINKED HANDOFF</span><b>READY</b></div>
+          <div class="evidence-demo-target"><span>AS</span><div><strong>To Atlas (sample)</strong><small>Gatherwire demo project</small></div></div>
+          <p>Review the release note against the retained source and return a concise implementation decision.</p>
+          <div class="evidence-next"><span>NEXT ACTION</span><strong>Validate the product copy against the original launch-room message.</strong></div>
+          <div class="evidence-source"><span>LINKED EVIDENCE</span><code>003e3db4</code><p>Maya: Keep the human-readable source with the handoff.</p></div>
+          <footer><code>task:8d92175b</code><code>corr:1f0dc5cd</code></footer>
+        </article>
+      </section>
+
+      <section class="architecture-section" id="architecture" aria-labelledby="architecture-title">
+        <div class="architecture-head">
+          <h2 id="architecture-title">A small protocol layer between the tools you already use.</h2>
+          <p>The current demo proves the browser layer: structured discovery, shared state, and visible receipts. Project-agent and additional app connectors are the next integration layer.</p>
+        </div>
+        <div class="architecture-map" role="img" aria-label="Future architecture: chats, project agents, files, and web apps connect through Gatherwire rooms to people and browser agents">
+          <div class="architecture-sources"><span>Chats</span><span>Project agents</span><span>Local files</span><span>Web apps</span></div>
+          <div class="architecture-core"><i></i><strong>Gatherwire</strong><small>shared rooms + source links</small></div>
+          <div class="architecture-outputs"><span>People</span><span>Browser agents</span><span>Visible handoffs</span></div>
+        </div>
+        <p class="architecture-boundary"><strong>Demo boundary:</strong> Atlas is synthetic and no external project agent is started. The handoff is recorded and inspectable.</p>
+      </section>
+
+      <footer class="site-footer">
+        <a class="landing-brand" href="#top" aria-label="Back to top">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Gatherwire</span>
+        </a>
+        <p>Shared context. Visible, source-linked handoffs.</p>
+        <div><a href="https://github.com/entnetzt/buzz-webmcp" target="_blank" rel="noreferrer">GitHub</a><a href="#live-workspace">Live demo</a><span>MIT licensed</span></div>
+      </footer>
+    </main>
 
     <dialog id="space-dialog">
       <form method="dialog" id="space-form">
