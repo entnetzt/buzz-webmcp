@@ -28,7 +28,8 @@ function activeSpace() {
 }
 
 function initials(name) {
-  return String(name || "?").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const words = String(name || "?").match(/[\p{L}\p{N}]+/gu) || ["?"];
+  return words.map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
 function formatTime(value) {
@@ -263,7 +264,7 @@ async function searchMessages(query) {
     renderSearch();
     return;
   }
-  const data = await api(`/api/search?q=${encodeURIComponent(text)}&limit=30`);
+  const data = await api(`/api/search?q=${encodeURIComponent(text)}&limit=10`);
   state.searchResults = data.results;
   renderSearch();
 }
