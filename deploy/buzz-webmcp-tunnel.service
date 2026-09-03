@@ -1,0 +1,19 @@
+[Unit]
+Description=Cloudflare Tunnel for Buzz WebMCP Challenge Demo
+After=network-online.target buzz-webmcp.service
+Wants=network-online.target
+Requires=buzz-webmcp.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+ExecStart=/home/ubuntu/bin/cloudflared tunnel --config /home/ubuntu/projects/buzz-webmcp/deploy/cloudflared.yml --no-autoupdate --loglevel warn run buzz-webmcp-challenge
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

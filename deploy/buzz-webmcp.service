@@ -1,0 +1,25 @@
+[Unit]
+Description=Buzz WebMCP Challenge Demo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/projects/buzz-webmcp
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3058
+Environment=STATE_FILE=/home/ubuntu/projects/buzz-webmcp/.runtime/state.json
+ExecStart=/usr/bin/node /home/ubuntu/projects/buzz-webmcp/server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/projects/buzz-webmcp/.runtime
+
+[Install]
+WantedBy=multi-user.target

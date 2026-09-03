@@ -45,7 +45,7 @@ The complete definitions are in [`public/webmcp.js`](public/webmcp.js). Tool han
 
 ## Try the judge flow
 
-Open the live app in the latest ChatGPT desktop in-app browser with Site tools enabled, or Chrome 149+ with WebMCP enabled. Then ask:
+Open [the live demo](https://buzz-webmcp.zeitfuereincoaching.de) in the latest ChatGPT desktop in-app browser with Site tools enabled, or Chrome 149+ with WebMCP enabled. Then ask:
 
 1. `List the available Buzz spaces.`
 2. `Read the latest messages in WebMCP Lab.`
@@ -69,6 +69,7 @@ WebMCP tools ────┘
 - `server.mjs` — dependency-free Node.js static server and bounded JSON API.
 - `store.mjs` — per-session sample workspaces with atomic persistence.
 - `test/` — store, HTTP isolation, idempotency, and tool-registration tests.
+- `deploy/` — isolated systemd and Cloudflare Tunnel configuration used by the public demo.
 
 ## Run locally
 
@@ -115,4 +116,3 @@ No private project source or production data is included. The demo uses an indep
 ## License
 
 [MIT](LICENSE) © 2026 Kenan Polat.
-
