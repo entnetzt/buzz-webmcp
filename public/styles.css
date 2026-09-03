@@ -548,8 +548,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline-colo
 
 @media (max-width: 720px) {
   .sidebar { padding-left: 12px; background-image: radial-gradient(circle at 6px 24px, #1b1b1b 0, #1b1b1b 3px, transparent 3.5px); background-size: 12px 49px; }
+  .search-box { min-width: 0; }
   .space-button.active::before { display: none; }
   .space-button.active .hash { display: none; }
+}
+
+@media (max-width: 360px) {
+  .search-box kbd { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
