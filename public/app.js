@@ -1,7 +1,14 @@
-import { registerBuzzWebMCP } from "./webmcp.js?v=20260903-2";
+import { registerGatherwireWebMCP } from "./webmcp.js?v=20260903-5";
 
 const $ = (selector) => document.querySelector(selector);
-const state = { workspace: null, activeSpaceId: null, searchResults: null };
+const MISSION_TOOLS = [
+  "gatherwire_list_spaces",
+  "gatherwire_search_messages",
+  "gatherwire_read_messages",
+  "gatherwire_list_project_agents",
+  "gatherwire_publish_handoff",
+];
+const state = { workspace: null, activeSpaceId: null, searchResults: null, receipts: [], focusMessageId: null };
 let toastTimer;
 
 async function api(path, options = {}) {
@@ -49,6 +56,7 @@ function renderSpaces() {
   root.replaceChildren();
   const counts = new Map();
   for (const message of state.workspace.messages) counts.set(message.spaceId, (counts.get(message.spaceId) || 0) + 1);
+  for (const handoff of state.workspace.handoffs || []) counts.set(handoff.targetSpaceId, (counts.get(handoff.targetSpaceId) || 0) + 1);
   for (const space of state.workspace.spaces) {
     const button = element("button", `space-button${space.id === state.activeSpaceId ? " active" : ""}`);
     button.type = "button";
@@ -63,6 +71,55 @@ function renderSpaces() {
   }
 }
 
+function renderHandoff(handoff, spaces, participants, messages) {
+  const item = element("li", "handoff-capsule");
+  const head = element("div", "handoff-head");
+  head.append(element("span", "handoff-label", "Source-linked handoff"), element("span", "handoff-status", handoff.status));
+
+  const target = participants.get(handoff.targetAgentId);
+  const title = element("div", "handoff-target");
+  title.append(element("span", "handoff-avatar", initials(target?.name || "Agent")));
+  const targetCopy = element("div");
+  targetCopy.append(element("strong", "", `To ${target?.name || "Project agent"}`));
+  targetCopy.append(element("span", "", target?.project || "Synthetic demo project"));
+  title.append(targetCopy);
+
+  const summary = element("p", "handoff-summary", handoff.summary);
+  const next = element("div", "handoff-next");
+  next.append(element("span", "", "Next action"), element("strong", "", handoff.nextAction));
+
+  const evidence = element("div", "handoff-evidence");
+  evidence.append(element("span", "", "Linked evidence"));
+  for (const messageId of handoff.evidenceMessageIds) {
+    const message = messages.get(messageId);
+    const link = element("button", "evidence-link");
+    link.type = "button";
+    link.append(
+      element("code", "", messageId.slice(0, 8)),
+      element("span", "", message ? `${message.author}: ${message.content}` : "Retained source reference"),
+    );
+    link.addEventListener("click", () => {
+      state.activeSpaceId = handoff.sourceSpaceId;
+      state.searchResults = null;
+      state.focusMessageId = messageId;
+      render();
+    });
+    evidence.append(link);
+  }
+
+  const sourceName = spaces.get(handoff.sourceSpaceId) || "source";
+  const evidenceCount = handoff.evidenceMessageIds.length;
+  const meta = element("div", "handoff-meta");
+  meta.append(
+    element("span", "", `From #${sourceName}`),
+    element("span", "", `${evidenceCount} linked message${evidenceCount === 1 ? "" : "s"}`),
+    element("code", "", handoff.taskId),
+    element("code", "", `corr:${handoff.correlationId.slice(0, 8)}`),
+  );
+  item.append(head, title, summary, next, evidence, meta, element("p", "handoff-boundary", "Synthetic demo. Handoff recorded; no external agent started."));
+  return item;
+}
+
 function renderMessages() {
   const space = activeSpace();
   if (!space) return;
@@ -73,9 +130,21 @@ function renderMessages() {
   root.replaceChildren();
   const messages = state.workspace.messages
     .filter((message) => message.spaceId === space.id)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  for (const message of messages) {
+    .map((message) => ({ ...message, itemType: "message" }));
+  const handoffs = (state.workspace.handoffs || [])
+    .filter((handoff) => handoff.targetSpaceId === space.id)
+    .map((handoff) => ({ ...handoff, itemType: "handoff" }));
+  const timeline = [...messages, ...handoffs].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const spaces = new Map(state.workspace.spaces.map((item) => [item.id, item.name]));
+  const participants = new Map((state.workspace.participants || []).map((participant) => [participant.id, participant]));
+  const messageIndex = new Map(state.workspace.messages.map((item) => [item.id, item]));
+  for (const message of timeline) {
+    if (message.itemType === "handoff") {
+      root.append(renderHandoff(message, spaces, participants, messageIndex));
+      continue;
+    }
     const item = element("li", `message ${message.role}`);
+    item.dataset.messageId = message.id;
     const avatar = element("div", "avatar", initials(message.author));
     const body = element("div", "message-body");
     const meta = element("div", "message-meta");
@@ -88,7 +157,20 @@ function renderMessages() {
     item.append(avatar, body);
     root.append(item);
   }
-  requestAnimationFrame(() => { root.scrollTop = root.scrollHeight; });
+  requestAnimationFrame(() => {
+    if (state.focusMessageId) {
+      const focused = root.querySelector(`[data-message-id="${state.focusMessageId}"]`);
+      if (focused) {
+        focused.classList.add("evidence-focus");
+        focused.tabIndex = -1;
+        focused.scrollIntoView({ block: "center" });
+        focused.focus({ preventScroll: true });
+      }
+      state.focusMessageId = null;
+      return;
+    }
+    root.scrollTop = root.scrollHeight;
+  });
 }
 
 function renderSearch() {
@@ -123,15 +205,38 @@ function renderSearch() {
 
 function renderActivity() {
   if (!state.workspace) return;
-  const spaces = new Map(state.workspace.spaces.map((space) => [space.id, space.name]));
   const root = $("#activity-list");
   root.replaceChildren();
-  const latest = [...state.workspace.messages].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4);
-  for (const message of latest) {
-    const item = element("li", message.source === "webmcp" ? "webmcp" : "");
-    item.textContent = `${message.author} posted in #${spaces.get(message.spaceId) || "space"}`;
+  if (!state.receipts.length) {
+    root.append(element("li", "receipt-empty", "Agent tool receipts will appear here."));
+    return;
+  }
+  for (const receipt of state.receipts.slice(0, 6)) {
+    const item = element("li", `receipt ${receipt.success ? "success" : "failure"}`);
+    const headline = element("div", "receipt-line");
+    headline.append(element("code", "", receipt.tool.replace("gatherwire_", "")), element("span", receipt.mode, receipt.mode));
+    const identifiers = [receipt.id.slice(0, 8)];
+    if (receipt.taskId) identifiers.push(receipt.taskId.slice(0, 13));
+    if (receipt.correlationId) identifiers.push(`corr:${receipt.correlationId.slice(0, 8)}`);
+    const detail = element("div", "receipt-detail", `${receipt.target} / ${formatTime(receipt.createdAt)} / ${identifiers.join(" / ")}`);
+    item.append(headline, detail);
     root.append(item);
   }
+}
+
+function renderMission() {
+  const completed = new Set(state.receipts.filter((receipt) => receipt.success).map((receipt) => receipt.tool));
+  const count = MISSION_TOOLS.filter((tool) => completed.has(tool)).length;
+  $("#mission-count").textContent = `${count}/${MISSION_TOOLS.length}`;
+  for (const row of document.querySelectorAll("[data-mission-tool]")) {
+    row.classList.toggle("complete", completed.has(row.dataset.missionTool));
+  }
+}
+
+function recordReceipt(receipt) {
+  state.receipts = [receipt, ...state.receipts.filter((item) => item.id !== receipt.id)].slice(0, 12);
+  renderActivity();
+  renderMission();
 }
 
 function render() {
@@ -141,6 +246,7 @@ function render() {
   renderMessages();
   renderSearch();
   renderActivity();
+  renderMission();
 }
 
 async function refresh(focusSpaceId) {
@@ -213,7 +319,7 @@ function bind() {
   });
 
   $("#copy-prompt").addEventListener("click", async () => {
-    const prompt = "Find the handoff note, then post a concise launch update in that Buzz space.";
+    const prompt = "Complete the Gatherwire judge mission with this page's site tools: list spaces; search for the handoff note; read its source space; list the available demo project agents; then publish a source-linked handoff to Atlas in the product space using the found message ID as evidence. Keep the summary and next action concise.";
     try {
       await navigator.clipboard.writeText(prompt);
       notify("Agent prompt copied.");
@@ -226,6 +332,7 @@ function bind() {
     try {
       await api("/api/reset", { method: "POST", body: {} });
       state.searchResults = null;
+      state.receipts = [];
       await refresh();
       notify("Your isolated demo workspace was reset.");
     } catch (error) {
@@ -244,7 +351,7 @@ async function boot() {
     return;
   }
   try {
-    const result = await registerBuzzWebMCP({ api, refresh, notify });
+    const result = await registerGatherwireWebMCP({ api, refresh, notify, recordReceipt });
     const status = $("#tool-status");
     if (result.available) {
       status.classList.add("available");

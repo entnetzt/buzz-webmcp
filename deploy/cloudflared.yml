@@ -2,6 +2,6 @@ tunnel: c262946f-8e3c-4b8a-a959-d61aa619514f
 credentials-file: /home/ubuntu/.cloudflared/c262946f-8e3c-4b8a-a959-d61aa619514f.json
 
 ingress:
-  - hostname: buzz-webmcp.zeitfuereincoaching.de
+  - hostname: gatherwire.vistua.de
     service: http://127.0.0.1:3058
   - service: http_status:404

@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT || 3056);
 const HOST = process.env.HOST || "127.0.0.1";
 const STATE_FILE = process.env.STATE_FILE || path.join(ROOT, ".runtime", "state.json");
 const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN ? new URL(process.env.PUBLIC_ORIGIN) : null;
-const SESSION_COOKIE = "buzz_webmcp_session";
+const SESSION_COOKIE = "__Host-gatherwire_webmcp_session";
 const SESSION_RE = /^[a-f0-9]{48}$/;
 const BODY_LIMIT = 16 * 1024;
 const HSTS = "max-age=31536000; includeSubDomains";
@@ -30,8 +30,9 @@ function parseCookies(header = "") {
 
 function sessionFor(req, headers) {
   const candidate = parseCookies(req.headers.cookie)[SESSION_COOKIE];
-  if (SESSION_RE.test(candidate || "")) return candidate;
+  if (SESSION_RE.test(candidate || "") && store.hasSession(candidate)) return candidate;
   const sessionId = randomBytes(24).toString("hex");
+  store.ensure(sessionId);
   headers["Set-Cookie"] = `${SESSION_COOKIE}=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`;
   return sessionId;
 }
@@ -83,18 +84,26 @@ async function body(req) {
   }
 }
 
+function requireExactFields(payload, allowed) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new StoreError(400, "Request body must be a JSON object.");
+  const unknown = Object.keys(payload).filter((key) => !allowed.has(key));
+  if (unknown.length) throw new StoreError(400, `Unknown request field: ${unknown[0]}.`);
+}
+
 async function handleApi(req, res, url) {
+  if (req.method === "GET" && url.pathname === "/api/health") {
+    return json(res, 200, { ok: true, service: "gatherwire-webmcp" });
+  }
   const responseHeaders = {};
   const sessionId = sessionFor(req, responseHeaders);
-
-  if (req.method === "GET" && url.pathname === "/api/health") {
-    return json(res, 200, { ok: true, service: "buzz-webmcp" }, responseHeaders);
-  }
   if (req.method === "GET" && url.pathname === "/api/workspace") {
     return json(res, 200, { workspace: store.snapshot(sessionId) }, responseHeaders);
   }
   if (req.method === "GET" && url.pathname === "/api/spaces") {
     return json(res, 200, { spaces: store.listSpaces(sessionId) }, responseHeaders);
+  }
+  if (req.method === "GET" && url.pathname === "/api/project-agents") {
+    return json(res, 200, { agents: store.listProjectAgents(sessionId) }, responseHeaders);
   }
   if (req.method === "GET" && url.pathname === "/api/search") {
     const results = store.searchMessages(sessionId, url.searchParams.get("q"), url.searchParams.get("space_id"), url.searchParams.get("limit"));
@@ -103,6 +112,20 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/spaces") {
     const space = await store.createSpace(sessionId, await body(req));
     return json(res, 201, { space }, responseHeaders);
+  }
+  if (req.method === "POST" && url.pathname === "/api/handoffs") {
+    const payload = await body(req);
+    requireExactFields(payload, new Set(["source_space_id", "target_space_id", "target_agent_id", "summary", "next_action", "evidence_message_ids", "request_id"]));
+    const result = await store.publishHandoff(sessionId, {
+      sourceSpaceId: payload.source_space_id,
+      targetSpaceId: payload.target_space_id,
+      targetAgentId: payload.target_agent_id,
+      summary: payload.summary,
+      nextAction: payload.next_action,
+      evidenceMessageIds: payload.evidence_message_ids,
+      idempotencyKey: payload.request_id || req.headers["idempotency-key"],
+    });
+    return json(res, result.created ? 201 : 200, result, responseHeaders);
   }
   if (req.method === "POST" && url.pathname === "/api/reset") {
     return json(res, 200, { workspace: await store.reset(sessionId) }, responseHeaders);
@@ -114,6 +137,7 @@ async function handleApi(req, res, url) {
   }
   if (messageMatch && req.method === "POST") {
     const payload = await body(req);
+    requireExactFields(payload, new Set(["content", "source", "idempotency_key"]));
     const result = await store.postMessage(sessionId, {
       spaceId: messageMatch[1],
       content: payload.content,
@@ -172,5 +196,5 @@ export const server = createServer(async (req, res) => {
 });
 
 if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] || "")) {
-  server.listen(PORT, HOST, () => console.log(`Buzz WebMCP listening on http://${HOST}:${PORT}`));
+  server.listen(PORT, HOST, () => console.log(`Gatherwire WebMCP listening on http://${HOST}:${PORT}`));
 }

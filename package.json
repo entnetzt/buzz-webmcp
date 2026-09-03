@@ -1,9 +1,9 @@
 {
-  "name": "buzz-webmcp",
+  "name": "gatherwire-webmcp",
   "version": "1.0.0",
   "private": false,
   "type": "module",
-  "description": "A WebMCP-native shared workspace for humans and browser agents.",
+  "description": "A WebMCP-native shared workspace for visible, source-linked human-agent handoffs.",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test",

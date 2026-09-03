@@ -6,7 +6,7 @@ import test from "node:test";
 import { StoreError, WorkspaceStore } from "../store.mjs";
 
 async function fixture(t) {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "buzz-webmcp-store-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "gatherwire-webmcp-store-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
   return new WorkspaceStore(path.join(dir, "state.json")).load();
 }
@@ -17,8 +17,59 @@ test("new sessions receive isolated starter workspaces", async (t) => {
   const b = store.snapshot("b");
   assert.equal(a.spaces.length, 3);
   assert.equal(a.messages.length, 4);
+  assert.equal(a.participants.length, 1);
+  assert.equal(a.participants[0].synthetic, true);
+  assert.deepEqual(a.handoffs, []);
   assert.equal("sessionId" in a, false);
   assert.notEqual(a.spaces[0].id, b.spaces[0].id);
+});
+
+test("source-linked handoffs validate evidence, target an allowlisted demo agent, and retry safely", async (t) => {
+  const store = await fixture(t);
+  const session = "handoff";
+  const workspace = store.snapshot(session);
+  const sourceMessage = workspace.messages.find((message) => message.content.startsWith("Handoff:"));
+  const targetSpace = workspace.spaces.find((space) => space.name === "product");
+  const targetAgent = workspace.participants[0];
+  const input = {
+    sourceSpaceId: sourceMessage.spaceId,
+    targetSpaceId: targetSpace.id,
+    targetAgentId: targetAgent.id,
+    summary: "The release evidence is ready for review.",
+    nextAction: "Check the live tool receipts.",
+    evidenceMessageIds: [sourceMessage.id],
+    idempotencyKey: "handoff-once",
+  };
+
+  const created = await store.publishHandoff(session, input);
+  assert.equal(created.created, true);
+  assert.equal(created.handoff.synthetic, true);
+  assert.equal(created.handoff.status, "recorded");
+  assert.equal(created.handoff.targetAgentId, targetAgent.id);
+  assert.match(created.handoff.taskId, /^task:/);
+  assert.equal("idempotencyKey" in created.handoff, false);
+
+  const retried = await store.publishHandoff(session, input);
+  assert.equal(retried.created, false);
+  assert.equal(retried.handoff.id, created.handoff.id);
+  assert.equal(store.snapshot(session).handoffs.length, 1);
+  assert.equal(store.readMessages(session, targetSpace.id).handoffs[0].id, created.handoff.id);
+
+  const alternateTarget = workspace.spaces.find((space) => space.id !== targetSpace.id && space.id !== sourceMessage.spaceId);
+  await assert.rejects(
+    () => store.publishHandoff(session, { ...input, targetSpaceId: alternateTarget.id }),
+    (error) => error instanceof StoreError && error.status === 409,
+  );
+
+  await assert.rejects(
+    () => store.publishHandoff(session, { ...input, idempotencyKey: "bad-agent", targetAgentId: "unknown" }),
+    (error) => error instanceof StoreError && error.status === 404,
+  );
+  const wrongSpaceMessage = workspace.messages.find((message) => message.spaceId !== sourceMessage.spaceId);
+  await assert.rejects(
+    () => store.publishHandoff(session, { ...input, idempotencyKey: "bad-evidence", evidenceMessageIds: [wrongSpaceMessage.id] }),
+    (error) => error instanceof StoreError && error.status === 400,
+  );
 });
 
 test("human and WebMCP operations share one workspace", async (t) => {
@@ -32,8 +83,8 @@ test("human and WebMCP operations share one workspace", async (t) => {
     idempotencyKey: "one",
   });
   assert.equal(post.created, true);
-  assert.equal(post.message.author, "Browser Agent");
-  assert.equal(post.message.source, "webmcp");
+  assert.equal(post.message.author, "Demo operator");
+  assert.equal(post.message.source, "shared-api");
   assert.match(store.readMessages(session, space.id).messages.at(-1).content, /Launch marker 9f/);
   assert.equal(store.searchMessages(session, "Launch marker 9f").length, 1);
 });
@@ -47,6 +98,10 @@ test("idempotency keys prevent duplicate messages", async (t) => {
   assert.equal(retried.created, false);
   assert.equal("idempotencyKey" in retried.message, false);
   assert.equal(store.searchMessages("retry", "Post once").length, 1);
+  await assert.rejects(
+    () => store.postMessage("retry", { ...input, content: "Changed payload" }),
+    (error) => error instanceof StoreError && error.status === 409,
+  );
 });
 
 test("inputs are bounded and unknown resources stay private", async (t) => {

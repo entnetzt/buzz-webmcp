@@ -3,17 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Buzz WebMCP — shared spaces where people and browser agents work together." />
-    <title>Buzz WebMCP</title>
-    <link rel="stylesheet" href="/styles.css?v=20260903-2" />
-    <script type="module" src="/app.js?v=20260903-2"></script>
+    <meta name="description" content="Gatherwire is a shared collaboration page for people and browser agents." />
+    <title>Gatherwire WebMCP</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/styles.css?v=20260903-5" />
+    <script type="module" src="/app.js?v=20260903-5"></script>
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="/" aria-label="Buzz WebMCP home">
+        <a class="brand" href="/" aria-label="Gatherwire home">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span>Buzz <b>WebMCP</b></span>
+          <span>Gatherwire <b>WebMCP</b></span>
         </a>
         <label class="search-box">
           <span class="sr-only">Search all messages</span>
@@ -32,7 +33,7 @@
         <div id="spaces" class="space-list"></div>
         <div class="privacy-note">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.2c0 4.7 3.2 8.1 7.5 9.8 4.3-1.7 7.5-5.1 7.5-9.8V6L12 3Z"/></svg>
-          <p><strong>Private by design</strong><br />Every visitor gets an isolated sample workspace. No production data is connected.</p>
+          <p><strong>Isolated demo workspace</strong><br />Every visitor gets separate sample data. No production system or external agent is connected.</p>
         </div>
       </nav>
 
@@ -52,7 +53,7 @@
           <label class="sr-only" for="message-input">Message this space</label>
           <textarea id="message-input" rows="2" maxlength="1000" placeholder="Message #space" required></textarea>
           <div class="composer-foot">
-            <span>Human message · Agent tools use the same action</span>
+            <span>UI and site tools share the same server state</span>
             <button type="submit">Send <span>⌘↵</span></button>
           </div>
         </form>
@@ -60,25 +61,35 @@
 
       <aside class="tool-panel" aria-label="WebMCP site tools">
         <div class="panel-kicker"><span></span> LIVE CAPABILITY LAYER</div>
-        <h2>One page.<br />Two operators.</h2>
-        <p class="panel-intro">People use the interface. Agents discover structured actions from this exact page and session.</p>
+        <h2>Shared context.<br />Visible handoffs.</h2>
+        <p class="panel-intro">A person uses the interface. A browser agent operates the same visible state through structured site tools.</p>
 
         <div class="tool-cards" id="tool-cards">
-          <article><span class="read">READ</span><code>buzz_list_spaces</code><p>Discover rooms and IDs.</p></article>
-          <article><span class="read">READ</span><code>buzz_read_messages</code><p>Load recent room context.</p></article>
-          <article><span class="read">READ</span><code>buzz_search_messages</code><p>Find facts across rooms.</p></article>
-          <article><span class="write">WRITE</span><code>buzz_post_message</code><p>Contribute to a conversation.</p></article>
-          <article><span class="write">WRITE</span><code>buzz_create_space</code><p>Open a new shared room.</p></article>
+          <article><span class="read">READ</span><code>gatherwire_list_spaces</code><p>Discover rooms and IDs.</p></article>
+          <article><span class="read">READ</span><code>gatherwire_read_messages</code><p>Load messages and handoff capsules.</p></article>
+          <article><span class="read">READ</span><code>gatherwire_search_messages</code><p>Find source messages.</p></article>
+          <article><span class="read">READ</span><code>gatherwire_list_project_agents</code><p>Find an addressable demo agent.</p></article>
+          <article><span class="write">WRITE</span><code>gatherwire_publish_handoff</code><p>Create a source-linked capsule.</p></article>
+          <details><summary>2 more site tools</summary>
+            <article><span class="write">WRITE</span><code>gatherwire_post_message</code><p>Contribute to a conversation.</p></article>
+            <article><span class="write">WRITE</span><code>gatherwire_create_space</code><p>Open a new shared room.</p></article>
+          </details>
         </div>
 
-        <div class="try-card">
-          <span class="eyebrow">Try with an agent</span>
-          <p>“Find the handoff note, then post a concise launch update in that space.”</p>
-          <button id="copy-prompt" type="button">Copy prompt</button>
+        <div class="mission-card">
+          <div><strong>Judge mission</strong><span id="mission-count">0/5</span></div>
+          <ol>
+            <li data-mission-tool="gatherwire_list_spaces"><span></span>List spaces</li>
+            <li data-mission-tool="gatherwire_search_messages"><span></span>Find the handoff note</li>
+            <li data-mission-tool="gatherwire_read_messages"><span></span>Read source context</li>
+            <li data-mission-tool="gatherwire_list_project_agents"><span></span>Find Atlas</li>
+            <li data-mission-tool="gatherwire_publish_handoff"><span></span>Publish the capsule</li>
+          </ol>
+          <button id="copy-prompt" type="button">Copy complete mission</button>
         </div>
 
         <div class="activity">
-          <div><span class="eyebrow">Recent activity</span><button id="reset-demo" type="button">Reset demo</button></div>
+          <div><span class="eyebrow">Tool receipts</span><button id="reset-demo" type="button">Reset demo</button></div>
           <ul id="activity-list"></ul>
         </div>
       </aside>

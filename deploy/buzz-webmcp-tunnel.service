@@ -1,5 +1,5 @@
 [Unit]
-Description=Cloudflare Tunnel for Buzz WebMCP Challenge Demo
+Description=Cloudflare Tunnel for Gatherwire WebMCP Challenge Demo
 After=network-online.target buzz-webmcp.service
 Wants=network-online.target
 Requires=buzz-webmcp.service
