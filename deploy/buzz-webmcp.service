@@ -12,6 +12,7 @@ Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=3058
 Environment=STATE_FILE=/home/ubuntu/projects/buzz-webmcp/.runtime/state.json
+Environment=PUBLIC_ORIGIN=https://buzz-webmcp.zeitfuereincoaching.de
 ExecStart=/usr/bin/node /home/ubuntu/projects/buzz-webmcp/server.mjs
 Restart=on-failure
 RestartSec=3

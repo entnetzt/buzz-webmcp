@@ -22,7 +22,12 @@ async function serverFixture(t) {
   const port = await freePort();
   const child = spawn(process.execPath, ["server.mjs"], {
     cwd: path.resolve(import.meta.dirname, ".."),
-    env: { ...process.env, PORT: String(port), STATE_FILE: path.join(dir, "state.json") },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      STATE_FILE: path.join(dir, "state.json"),
+      PUBLIC_ORIGIN: "https://buzz-webmcp.zeitfuereincoaching.de",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   t.after(async () => {
@@ -71,4 +76,24 @@ test("HTTP API keeps visitor workspaces isolated and validates writes", async (t
     body: JSON.stringify({ content: "" }),
   });
   assert.equal(invalid.status, 400);
+});
+
+test("forwarded HTTP requests redirect to the fixed public HTTPS origin", async (t) => {
+  const { base } = await serverFixture(t);
+  const response = await fetch(`${base}/api/workspace?from=http`, {
+    headers: { host: "attacker.invalid", "x-forwarded-proto": "http" },
+    redirect: "manual",
+  });
+
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://buzz-webmcp.zeitfuereincoaching.de/api/workspace?from=http");
+  assert.equal(response.headers.get("set-cookie"), null);
+});
+
+test("secure responses advertise HSTS", async (t) => {
+  const { base } = await serverFixture(t);
+  const response = await fetch(`${base}/api/health`);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
 });

@@ -100,10 +100,11 @@ Optional environment variables:
 - Opaque, server-issued session cookies isolate visitors.
 - Space IDs are always resolved inside the current session.
 - Inputs are length-bounded and database-free storage uses atomic replacement.
-- Idempotency keys prevent duplicate message writes on retries.
+- Optional caller-supplied request IDs prevent duplicate message writes on retries.
 - The UI renders all message content with `textContent`, never HTML.
 - Security headers disable framing, unrelated network origins, camera, microphone, and location.
-- Workspaces expire from the loaded store after 30 days.
+- Forwarded HTTP requests redirect to the fixed public HTTPS origin, which also advertises HSTS.
+- Runtime pruning removes stale workspaces, and the public demo keeps at most 1,000 active sample sessions.
 
 This is a public demonstration, not a production messaging service. Do not enter sensitive information.
 

@@ -8,7 +8,7 @@ function harness() {
     calls.push({ path, options });
     if (path === "/api/spaces") return options.method === "POST" ? { space: { id: "new", name: "design-review" } } : { spaces: [{ id: "lab", name: "webmcp-lab" }] };
     if (path.startsWith("/api/search")) return { results: [{ id: "m1", spaceId: "lab", content: "handoff" }] };
-    if (path.includes("/messages") && options.method === "POST") return { space: { id: "lab", name: "webmcp-lab" }, message: { id: "m2", content: options.body.content } };
+    if (path.includes("/messages") && options.method === "POST") return { created: true, space: { id: "lab", name: "webmcp-lab" }, message: { id: "m2", content: options.body.content } };
     if (path.includes("/messages")) return { space: { id: "lab", name: "webmcp-lab" }, messages: [] };
     throw new Error(`Unexpected path ${path}`);
   };
@@ -37,11 +37,11 @@ test("defines five narrow top-level imperative tools", () => {
 test("write tools use the same API and return verifiable results", async () => {
   const h = harness();
   const tools = buzzToolDefinitions(h);
-  const result = await tools.find((tool) => tool.name === "buzz_post_message").execute({ space_id: "lab", content: "Launch update" });
+  const result = await tools.find((tool) => tool.name === "buzz_post_message").execute({ space_id: "lab", content: "Launch update", request_id: "stable-demo-post" });
   assert.equal(result.success, true);
   assert.equal(result.message.content, "Launch update");
   assert.equal(h.calls.at(-1).options.body.source, "webmcp");
-  assert.ok(h.calls.at(-1).options.body.idempotency_key);
+  assert.equal(h.calls.at(-1).options.body.idempotency_key, "stable-demo-post");
 });
 
 test("registration feature-detects document.modelContext", async (t) => {
@@ -51,7 +51,8 @@ test("registration feature-detects document.modelContext", async (t) => {
   assert.deepEqual(await registerBuzzWebMCP(harness()), { available: false, count: 0 });
 
   const registered = [];
-  globalThis.document = { modelContext: { registerTool: async (tool) => registered.push(tool) } };
+  globalThis.document = { modelContext: { registerTool: async (tool, options) => registered.push({ tool, options }) } };
   assert.deepEqual(await registerBuzzWebMCP(harness()), { available: true, count: 5 });
   assert.equal(registered.length, 5);
+  assert.ok(registered.every(({ options }) => options.signal instanceof AbortSignal));
 });

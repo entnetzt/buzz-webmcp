@@ -10,9 +10,11 @@ const PUBLIC = path.join(ROOT, "public");
 const PORT = Number(process.env.PORT || 3056);
 const HOST = process.env.HOST || "127.0.0.1";
 const STATE_FILE = process.env.STATE_FILE || path.join(ROOT, ".runtime", "state.json");
+const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN ? new URL(process.env.PUBLIC_ORIGIN) : null;
 const SESSION_COOKIE = "buzz_webmcp_session";
 const SESSION_RE = /^[a-f0-9]{48}$/;
 const BODY_LIMIT = 16 * 1024;
+const HSTS = "max-age=31536000; includeSubDomains";
 
 const store = await new WorkspaceStore(STATE_FILE).load();
 
@@ -40,9 +42,32 @@ function json(res, status, data, headers = {}) {
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
+    "Strict-Transport-Security": HSTS,
     ...headers,
   });
   res.end(JSON.stringify(data));
+}
+
+function forwardedScheme(req) {
+  const forwarded = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim().toLowerCase();
+  if (forwarded) return forwarded;
+  try {
+    return JSON.parse(String(req.headers["cf-visitor"] || "{}"))?.scheme?.toLowerCase();
+  } catch {
+    return undefined;
+  }
+}
+
+function redirectToPublicHttps(req, res, url) {
+  if (!PUBLIC_ORIGIN || forwardedScheme(req) !== "http") return false;
+  const destination = new URL(`${url.pathname}${url.search}`, PUBLIC_ORIGIN);
+  res.writeHead(308, {
+    Location: destination.toString(),
+    "Cache-Control": "no-store",
+    "Strict-Transport-Security": HSTS,
+  });
+  res.end();
+  return true;
 }
 
 async function body(req) {
@@ -122,6 +147,7 @@ async function handleStatic(req, res, url) {
       "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
+      "Strict-Transport-Security": HSTS,
       "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     });
     res.end(content);
@@ -134,6 +160,7 @@ async function handleStatic(req, res, url) {
 export const server = createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   try {
+    if (redirectToPublicHttps(req, res, url)) return;
     if (url.pathname.startsWith("/api/")) await handleApi(req, res, url);
     else if (req.method === "GET" || req.method === "HEAD") await handleStatic(req, res, url);
     else json(res, 405, { error: "Method not allowed." });

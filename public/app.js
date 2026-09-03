@@ -1,4 +1,4 @@
-import { registerBuzzWebMCP } from "./webmcp.js";
+import { registerBuzzWebMCP } from "./webmcp.js?v=20260903-2";
 
 const $ = (selector) => document.querySelector(selector);
 const state = { workspace: null, activeSpaceId: null, searchResults: null };
@@ -238,6 +238,12 @@ async function boot() {
   bind();
   try {
     await refresh();
+  } catch (error) {
+    notify(error.message, "ui", true);
+    $("#tool-status").innerHTML = "<span></span> Demo unavailable";
+    return;
+  }
+  try {
     const result = await registerBuzzWebMCP({ api, refresh, notify });
     const status = $("#tool-status");
     if (result.available) {
@@ -247,8 +253,8 @@ async function boot() {
       status.innerHTML = "<span></span> Open in a WebMCP browser";
     }
   } catch (error) {
-    notify(error.message, "ui", true);
-    $("#tool-status").innerHTML = "<span></span> Demo unavailable";
+    console.warn("Site tool registration failed", error);
+    $("#tool-status").innerHTML = "<span></span> Site tools unavailable";
   }
 }
 

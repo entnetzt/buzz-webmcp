@@ -160,15 +160,15 @@ button { color: inherit; }
 .message.agent .avatar { background: var(--lime); }
 .message-meta { display: flex; align-items: baseline; gap: 8px; }
 .message-meta strong { font-size: 13px; }
-.message-meta time { color: #656b69; font-size: 10px; }
+.message-meta time { color: #929896; font-size: 10px; }
 .source-badge { padding: 2px 6px; border: 1px solid rgba(217, 255, 102, 0.24); border-radius: 10px; color: var(--lime); font: 600 8px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.07em; text-transform: uppercase; }
 .message p { margin: 5px 0 0; color: #c9cdcb; font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .composer { grid-row: 4; height: 113px; margin: 0 24px 23px; border: 1px solid #343a38; border-radius: 12px; background: #171b1a; overflow: hidden; }
 .composer:focus-within { border-color: rgba(217, 255, 102, 0.45); }
 .composer textarea { width: 100%; height: 68px; min-height: 68px; resize: none; padding: 14px 15px 5px; color: var(--ink); border: 0; outline: 0; background: transparent; line-height: 1.45; }
-.composer textarea::placeholder { color: #686e6c; }
-.composer-foot { min-height: 42px; padding: 6px 7px 7px 15px; display: flex; align-items: center; justify-content: space-between; color: #6e7472; font-size: 10px; }
+.composer textarea::placeholder { color: #8d9391; }
+.composer-foot { min-height: 42px; padding: 6px 7px 7px 15px; display: flex; align-items: center; justify-content: space-between; color: #929896; font-size: 10px; }
 .composer-foot button, .dialog-actions button { border: 0; border-radius: 7px; padding: 8px 12px; color: #121411; background: var(--lime); font-weight: 750; cursor: pointer; }
 .composer-foot button span { margin-left: 4px; opacity: 0.55; font-size: 9px; }
 
@@ -187,7 +187,7 @@ button { color: inherit; }
 .tool-cards { display: grid; gap: 6px; }
 .tool-cards article { position: relative; padding: 11px 12px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
 .tool-cards code { display: block; margin-bottom: 3px; color: #dfe2df; font-size: 11px; }
-.tool-cards p { margin: 0; color: #737977; font-size: 9px; }
+.tool-cards p { margin: 0; color: #a1a7a5; font-size: 9px; }
 .tool-cards article > span { position: absolute; top: 10px; right: 10px; font: 700 7px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.08em; }
 .tool-cards .read { color: var(--cyan); }
 .tool-cards .write { color: var(--orange); }
@@ -197,7 +197,7 @@ button { color: inherit; }
 .activity { margin-top: 23px; }
 .activity > div { display: flex; justify-content: space-between; }
 .activity ul { list-style: none; margin: 10px 0 0; padding: 0; }
-.activity li { padding: 8px 0; display: grid; grid-template-columns: 7px 1fr; gap: 8px; border-top: 1px solid rgba(255,255,255,.05); color: #7d8381; font-size: 9px; line-height: 1.35; }
+.activity li { padding: 8px 0; display: grid; grid-template-columns: 7px 1fr; gap: 8px; border-top: 1px solid rgba(255,255,255,.05); color: #9ea4a2; font-size: 9px; line-height: 1.35; }
 .activity li::before { content: ""; width: 5px; height: 5px; margin-top: 3px; border-radius: 50%; background: #535957; }
 .activity li.webmcp::before { background: var(--lime); }
 

@@ -4,17 +4,55 @@ import path from "node:path";
 
 const MAX_SPACES = 12;
 const MAX_MESSAGES = 200;
+const MAX_ACTIVE_SESSIONS = 1000;
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const PRUNE_INTERVAL_MS = 60 * 1000;
 
 function isoNow() {
   return new Date().toISOString();
 }
 
 function cleanText(value, field, max) {
-  const text = String(value ?? "").trim();
+  if (typeof value !== "string") throw new StoreError(400, `${field} must be a string.`);
+  const text = value.trim();
   if (!text) throw new StoreError(400, `${field} is required.`);
   if (text.length > max) throw new StoreError(400, `${field} must be ${max} characters or fewer.`);
   return text;
+}
+
+function optionalText(value, field, max) {
+  if (value === undefined || value === null || value === "") return "";
+  if (typeof value !== "string") throw new StoreError(400, `${field} must be a string.`);
+  const text = value.trim();
+  if (text.length > max) throw new StoreError(400, `${field} must be ${max} characters or fewer.`);
+  return text;
+}
+
+function boundedInteger(value, fallback, max, field = "limit") {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value;
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > max) {
+    throw new StoreError(400, `${field} must be an integer from 1 to ${max}.`);
+  }
+  return parsed;
+}
+
+function objectInput(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new StoreError(400, "Request body must be a JSON object.");
+  return value;
+}
+
+function publicMessage(message) {
+  const clone = structuredClone(message);
+  delete clone.idempotencyKey;
+  return clone;
+}
+
+function publicWorkspace(workspace) {
+  const clone = structuredClone(workspace);
+  delete clone.sessionId;
+  clone.messages = clone.messages.map(publicMessage);
+  return clone;
 }
 
 function starterWorkspace(sessionId) {
@@ -84,14 +122,19 @@ export class WorkspaceStore {
     this.filePath = filePath;
     this.workspaces = new Map();
     this.writeQueue = Promise.resolve();
+    this.lastPrunedAt = 0;
   }
 
   async load() {
     try {
       const raw = JSON.parse(await readFile(this.filePath, "utf8"));
       const cutoff = Date.now() - SESSION_MAX_AGE_MS;
-      for (const workspace of raw.workspaces || []) {
-        if (Date.parse(workspace.updatedAt) >= cutoff) this.workspaces.set(workspace.sessionId, workspace);
+      const recent = (raw.workspaces || [])
+        .filter((workspace) => Date.parse(workspace.updatedAt) >= cutoff)
+        .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+        .slice(0, MAX_ACTIVE_SESSIONS);
+      for (const workspace of recent) {
+        this.workspaces.set(workspace.sessionId, workspace);
       }
     } catch (error) {
       if (error?.code !== "ENOENT") throw error;
@@ -100,44 +143,61 @@ export class WorkspaceStore {
   }
 
   ensure(sessionId) {
-    if (!this.workspaces.has(sessionId)) this.workspaces.set(sessionId, starterWorkspace(sessionId));
+    if (!this.workspaces.has(sessionId)) {
+      this.prune();
+      if (this.workspaces.size >= MAX_ACTIVE_SESSIONS) {
+        const oldest = [...this.workspaces.values()].sort((a, b) => Date.parse(a.updatedAt) - Date.parse(b.updatedAt))[0];
+        if (oldest) this.workspaces.delete(oldest.sessionId);
+      }
+      this.workspaces.set(sessionId, starterWorkspace(sessionId));
+    }
     return this.workspaces.get(sessionId);
   }
 
+  prune(now = Date.now()) {
+    if (now - this.lastPrunedAt < PRUNE_INTERVAL_MS) return;
+    const cutoff = now - SESSION_MAX_AGE_MS;
+    for (const [sessionId, workspace] of this.workspaces) {
+      if (Date.parse(workspace.updatedAt) < cutoff) this.workspaces.delete(sessionId);
+    }
+    this.lastPrunedAt = now;
+  }
+
   snapshot(sessionId) {
-    return structuredClone(this.ensure(sessionId));
+    return publicWorkspace(this.ensure(sessionId));
   }
 
   listSpaces(sessionId) {
     return this.snapshot(sessionId).spaces;
   }
 
-  readMessages(sessionId, spaceId, limit = 50) {
+  readMessages(sessionId, spaceId, limit = 10) {
     const workspace = this.ensure(sessionId);
     const space = this.findSpace(workspace, spaceId);
-    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const safeLimit = boundedInteger(limit, 10, 10);
     const messages = workspace.messages
       .filter((message) => message.spaceId === space.id)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       .slice(-safeLimit);
-    return { space: structuredClone(space), messages: structuredClone(messages) };
+    return { space: structuredClone(space), messages: messages.map(publicMessage) };
   }
 
-  searchMessages(sessionId, query, spaceId, limit = 30) {
+  searchMessages(sessionId, query, spaceId, limit = 10) {
     const workspace = this.ensure(sessionId);
     const needle = cleanText(query, "query", 120).toLocaleLowerCase();
     if (spaceId) this.findSpace(workspace, spaceId);
-    const safeLimit = Math.min(Math.max(Number(limit) || 30, 1), 50);
+    const safeLimit = boundedInteger(limit, 10, 10);
     const spaces = new Map(workspace.spaces.map((space) => [space.id, space]));
     return workspace.messages
       .filter((message) => !spaceId || message.spaceId === spaceId)
       .filter((message) => `${message.author}\n${message.content}`.toLocaleLowerCase().includes(needle))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, safeLimit)
-      .map((message) => ({ ...structuredClone(message), spaceName: spaces.get(message.spaceId)?.name || "unknown" }));
+      .map((message) => ({ ...publicMessage(message), spaceName: spaces.get(message.spaceId)?.name || "unknown" }));
   }
 
   async createSpace(sessionId, input) {
+    input = objectInput(input);
     const workspace = this.ensure(sessionId);
     if (workspace.spaces.length >= MAX_SPACES) throw new StoreError(409, `This demo supports up to ${MAX_SPACES} spaces.`);
     const name = cleanText(input.name, "name", 50)
@@ -149,7 +209,7 @@ export class WorkspaceStore {
     const space = {
       id: randomUUID(),
       name,
-      description: String(input.description ?? "").trim().slice(0, 180),
+      description: optionalText(input.description, "description", 180),
       createdAt: isoNow(),
     };
     workspace.spaces.push(space);
@@ -159,13 +219,14 @@ export class WorkspaceStore {
   }
 
   async postMessage(sessionId, input) {
+    input = objectInput(input);
     const workspace = this.ensure(sessionId);
     const space = this.findSpace(workspace, input.spaceId);
     const content = cleanText(input.content, "content", 1000);
-    const idempotencyKey = String(input.idempotencyKey ?? "").trim().slice(0, 100);
+    const idempotencyKey = optionalText(input.idempotencyKey, "request_id", 100);
     if (idempotencyKey) {
       const existing = workspace.messages.find((message) => message.idempotencyKey === idempotencyKey);
-      if (existing) return { message: structuredClone(existing), created: false, space: structuredClone(space) };
+      if (existing) return { message: publicMessage(existing), created: false, space: structuredClone(space) };
     }
     if (workspace.messages.length >= MAX_MESSAGES) workspace.messages.splice(0, workspace.messages.length - MAX_MESSAGES + 1);
     const message = {
@@ -181,18 +242,19 @@ export class WorkspaceStore {
     workspace.messages.push(message);
     workspace.updatedAt = message.createdAt;
     await this.persist();
-    return { message: structuredClone(message), created: true, space: structuredClone(space) };
+    return { message: publicMessage(message), created: true, space: structuredClone(space) };
   }
 
   async reset(sessionId) {
     const workspace = starterWorkspace(sessionId);
     this.workspaces.set(sessionId, workspace);
     await this.persist();
-    return structuredClone(workspace);
+    return publicWorkspace(workspace);
   }
 
   findSpace(workspace, spaceId) {
-    const space = workspace.spaces.find((item) => item.id === String(spaceId ?? ""));
+    if (typeof spaceId !== "string" || !spaceId || spaceId.length > 80) throw new StoreError(400, "space_id must be a valid string.");
+    const space = workspace.spaces.find((item) => item.id === spaceId);
     if (!space) throw new StoreError(404, "Space not found in this demo workspace.");
     return space;
   }
